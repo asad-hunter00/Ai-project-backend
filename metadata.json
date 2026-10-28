@@ -1,0 +1,6 @@
+{
+  "name": "O‘ktam ota choyxonasi - Backend API & Database",
+  "description": "O‘ktam ota choyxonasi uchun Supabase Database, Auth va Storage asosidagi xavfsiz backend va REST API xizmati.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
