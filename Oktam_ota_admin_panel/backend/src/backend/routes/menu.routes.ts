@@ -1,0 +1,10 @@
+import { Router } from 'express';
+import { MenuService } from '../services/menu.service.ts';
+import { optionalAuthMiddleware, requireAdmin, type AuthenticatedRequest } from '../middlewares/auth.middleware.ts';
+import { CreateMenuSchema, UpdateMenuSchema } from '../validation/schemas.ts';
+const router=Router();
+router.get('/', optionalAuthMiddleware, async(req:AuthenticatedRequest,res,next)=>{try{res.json({success:true,data:await MenuService.list(req.isAdmin ? req.token! : undefined)});}catch(e){next(e);}});
+router.post('/', optionalAuthMiddleware,requireAdmin,async(req:AuthenticatedRequest,res,next)=>{try{res.status(201).json({success:true,data:await MenuService.create(req.token!,CreateMenuSchema.parse(req.body))});}catch(e){next(e);}});
+router.put('/:id',optionalAuthMiddleware,requireAdmin,async(req:AuthenticatedRequest,res,next)=>{try{res.json({success:true,data:await MenuService.update(req.token!,String(req.params.id),UpdateMenuSchema.parse(req.body))});}catch(e){next(e);}});
+router.delete('/:id',optionalAuthMiddleware,requireAdmin,async(req:AuthenticatedRequest,res,next)=>{try{await MenuService.remove(req.token!,String(req.params.id));res.json({success:true});}catch(e){next(e);}});
+export default router;
