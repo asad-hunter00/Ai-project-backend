@@ -1,3 +1,4 @@
+import videosRoutes from './routes/videos.routes.ts';
 import express, { type RequestHandler } from 'express';
 import authRoutes from './routes/auth.routes.ts';
 import settingsRoutes from './routes/settings.routes.ts';
@@ -34,10 +35,10 @@ export function createApp() {
     next();
   });
   app.use(express.json({limit:'8mb'}));
-  app.get('/api/health',(_req,res)=>res.json({status:'ok',supabase_configured:isSupabaseConfigured(),version:'admin-panel-1.1'}));
+  app.get('/api/health',(_req,res)=>res.json({status:'ok',supabase_configured:isSupabaseConfigured(),version:'admin-panel-1.2-videos'}));
   app.post('/api/auth/login',loginLimiter());
   app.use('/api/auth',authRoutes);app.use('/api/settings',settingsRoutes);app.use('/api/rooms',roomsRoutes);
-  app.use('/api/gallery',galleryRoutes);app.use('/api/announcements',announcementsRoutes);app.use('/api/menu',menuRoutes);
+  app.use('/api/videos',videosRoutes);app.use('/api/gallery',galleryRoutes);app.use('/api/announcements',announcementsRoutes);app.use('/api/menu',menuRoutes);
   app.use((_req,res)=>res.status(404).json({success:false,error:'API manzili topilmadi'}));
   app.use(errorHandler);return app;
 }

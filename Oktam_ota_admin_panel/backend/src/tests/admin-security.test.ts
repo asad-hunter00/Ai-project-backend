@@ -13,6 +13,11 @@ test('API authorization, stateless clients and validation',async()=>{
   if(url.pathname==='/auth/v1/user'){if(auth==='Bearer admin-test-token'||auth==='Bearer member-test-token'){res.end(JSON.stringify({id:auth.includes('member')?'22222222-2222-4222-8222-222222222222':adminId,email:'admin@example.test'}));}else{res.statusCode=401;res.end(JSON.stringify({msg:'invalid'}));}return;}
   if(url.pathname==='/auth/v1/logout'){res.statusCode=204;res.end();return;}
   if(url.pathname==='/rest/v1/admin_roles'){res.end(JSON.stringify(url.searchParams.get('user_id')===`eq.${adminId}`?{role:'superadmin'}:null));return;}
+  if(url.pathname==='/rest/v1/videos'&&req.method==='POST'){res.end('{}');return;}
+  if(url.pathname==='/storage/v1/object/upload/sign/choyxona-videos/videos/'+adminId+'.mp4'){res.end(JSON.stringify({url:'/object/upload/sign/choyxona-videos/videos/'+adminId+'.mp4?token=test'}));return;}
+  if(url.pathname==='/storage/v1/object/choyxona-videos/videos/'+adminId+'.mp4'){res.setHeader('Content-Type','video/mp4');res.end(Buffer.from('0000ftypisom'));return;}
+  if(url.pathname==='/rest/v1/videos'&&req.method==='GET'&&url.searchParams.has('id')){res.end(JSON.stringify({id:adminId,file_path:'videos/'+adminId+'.mp4',file_size:12}));return;}
+  if(url.pathname==='/rest/v1/videos'&&req.method==='PATCH'){res.end(JSON.stringify({id:adminId,upload_complete:true}));return;}
   if(!['GET','HEAD'].includes(req.method||''))writes++;
   if(url.pathname==='/rest/v1/rooms'){res.end(JSON.stringify(auth==='Bearer admin-test-token'?[{id:adminId,name:'Draft',is_published:false}]:[]));return;}
   if(url.pathname==='/rest/v1/gallery_images'){res.end(JSON.stringify(auth==='Bearer admin-test-token'?[{id:adminId,public_path:'/images/test.webp',file_path:'/images/test.webp',is_published:false}]:[]));return;}
@@ -37,6 +42,13 @@ test('API authorization, stateless clients and validation',async()=>{
   assert.deepEqual((await (await request('gallery')).json()).data,[]);
   assert.equal((await (await request('auth/me','GET','member-test-token')).json()).data.isAdmin,false);
   assert.equal((await request('menu','POST','admin-test-token',{id:'bad id'})).status,400);
+  for(const [path,method] of [['videos/upload-url','POST'],['videos/11111111-1111-4111-8111-111111111111/complete','POST'],['videos/11111111-1111-4111-8111-111111111111','PUT'],['videos/11111111-1111-4111-8111-111111111111','DELETE']]){assert.equal((await request(path,method,undefined,{})).status,401);assert.equal((await request(path,method,'member-test-token',{})).status,403);}
+  for(const body of [{file_size:52428801,mime_type:'video/mp4'},{file_size:20,mime_type:'text/html'},{file_size:0,mime_type:'video/mp4'}])assert.equal((await request('videos/upload-url','POST','admin-test-token',body)).status,400);
+  const {isMp4}=await import('../backend/routes/videos.routes.ts');assert.equal(isMp4(Buffer.from('0000ftypisom')),true);assert.equal(isMp4(Buffer.from('<html>fake')),false);
+  assert.deepEqual((await (await request('videos')).json()).data,[]);
+  assert.ok(seen.some(x=>x==='/rest/v1/videos|Bearer anon-test-key'));
+  assert.equal((await request('videos/'+adminId+'/complete','POST','admin-test-token')).status,200);
+  assert.equal((await request('videos/'+adminId,'PUT','admin-test-token',{title:{uz:'Video',ru:'',en:''},description:{uz:'',ru:'',en:''},sort_order:0,is_published:true})).status,200);
   assert.equal(writes,0);assert.ok(seen.includes('/rest/v1/rooms|Bearer anon-test-key'));
   assert.throws(()=>validateImageBytes(Buffer.from('fake png'),'image/png'));assert.throws(()=>validateImageBytes(Buffer.alloc(5242881),'image/webp'));
   assert.throws(()=>CreateMenuSchema.parse({id:'dish',name:{uz:'Taom',ru:'',en:''},price:-1}));assert.throws(()=>UpdateSettingsSchema.parse({map_url:'javascript:alert(1)'}));
